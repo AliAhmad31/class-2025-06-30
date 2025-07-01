@@ -1,5 +1,75 @@
 ---
 title: "Median Income"
+execute: 
+  echo: false
+  message: false
+  warning: false
+
 ---
 
-Get Data
+```{r}
+#| execute: False
+#| message: False
+#| echo: False
+library(tidycensus)
+library(tidyverse)  # Includes purrr, dplyr, ggplot2, and more
+
+years <- c(2017, 2018, 2019, 2021, 2022)
+
+# Fetch median household income for Massachusetts for each year
+income_ma_yearly <- map_dfr(
+  years,
+  function(y) {
+    get_acs(
+      geography = "state",
+      variables = "B19013_001",  # Median household income
+      state = "MA",
+      survey = "acs1",
+      year = y
+    ) %>%
+      mutate(year = y)
+  }
+)
+
+```
+
+
+```{r}
+#| execute: False
+#| message: False
+#| echo: False
+library(tidyverse)
+
+# Your tibble data
+income_data <- tibble::tribble(
+  ~GEOID, ~NAME, ~variable, ~estimate, ~moe, ~year,
+  "25", "Massachusetts", "B19013_001", 77385, 907, 2017,
+  "25", "Massachusetts", "B19013_001", 79835, 970, 2018,
+  "25", "Massachusetts", "B19013_001", 85843, 991, 2019,
+  "25", "Massachusetts", "B19013_001", 89645, 1287, 2021,
+  "25", "Massachusetts", "B19013_001", 94488, 1260, 2022
+)
+
+# Plot: Bar chart with error bars
+ggplot(income_data, aes(x = factor(year), y = estimate)) +
+  geom_col(fill = "#1ABC9C") +
+  geom_errorbar(
+    aes(ymin = estimate - moe, ymax = estimate + moe),
+    width = 0.2,
+    color = "gray30"
+  ) +
+  labs(
+    title = "💵 Median Household Income in Massachusetts (2017–2022)",
+    subtitle = "Includes margin of error",
+    x = "Year",
+    y = "Median Income (USD)",
+    caption = "Source: ACS 5-Year Estimates via tidycensus"
+  ) +
+  scale_y_continuous(labels = scales::dollar_format()) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text = element_text(size = 11)
+  )
+
+```
